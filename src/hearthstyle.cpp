@@ -364,6 +364,38 @@ void HearthStyle::unpolish(QWidget *w)
     QProxyStyle::unpolish(w);
 }
 
+// Item view selection, as grove's lists: each row one rounded shape inset
+// from the view's sides, every cell drawing its own slice of it (trees and
+// lists). Tables keep square cells.
+static void drawRowSelection(QPainter *p, const QStyleOption *opt, const QWidget *w, const QColor &fill)
+{
+    auto view = qobject_cast<const QAbstractItemView *>(w);
+    if (!view || qobject_cast<const QTableView *>(w) || w->inherits("QComboBoxListView")) {
+        p->fillRect(opt->rect, fill);
+        return;
+    }
+    const int vw = view->viewport()->width();
+    int x0 = 0, x1 = vw;
+    if (auto tree = qobject_cast<const QTreeView *>(w)) {
+        x0 = -tree->header()->offset();
+        x1 = x0 + tree->header()->length();
+    } else if (auto list = qobject_cast<const QListView *>(w); list && list->viewMode() == QListView::IconMode) {
+        x0 = opt->rect.left();
+        x1 = opt->rect.right() + 1;
+    }
+    const int inset = 4;
+    QRectF row(x0 + (x0 <= 0 ? inset : 0), opt->rect.top(), 0, opt->rect.height());
+    row.setRight(x1 - (x1 >= vw - 1 ? inset : 0));
+    if (qobject_cast<const QListView *>(w) && static_cast<const QListView *>(w)->viewMode() == QListView::IconMode)
+        row = QRectF(opt->rect);
+    Saver sv(p);
+    p->setClipRect(opt->rect, Qt::IntersectClip);
+    p->setPen(Qt::NoPen);
+    p->setBrush(fill);
+    const qreal r = qMin<qreal>(SmallRadius + 1, row.height() / 2);
+    p->drawRoundedRect(row.adjusted(0, 0.5, 0, -0.5), r, r);
+}
+
 // ---- primitives -------------------------------------------------------------
 
 void HearthStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, QPainter *p,
@@ -540,17 +572,8 @@ void HearthStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, QP
         if (!vi) break;
         if (vi->backgroundBrush.style() != Qt::NoBrush)
             p->fillRect(opt->rect, vi->backgroundBrush);
-        if (!(opt->state & State_Selected))
-            return;
-        const QColor fill = selectionFill(opt, c);
-        // Rounded rows in lists; square cells in tables and trees, where a
-        // row is several cells.
-        const bool list = !w || (qobject_cast<const QListView *>(w) && !w->inherits("QComboBoxListView"));
-        if (list && vi->viewItemPosition != QStyleOptionViewItem::Middle) {
-            fillRounded(p, QRectF(opt->rect).adjusted(0, 0.5, 0, -0.5), SmallRadius + 1, fill);
-        } else {
-            p->fillRect(opt->rect, fill);
-        }
+        if (opt->state & State_Selected)
+            drawRowSelection(p, opt, w, selectionFill(opt, c));
         return;
     }
     case PE_PanelItemViewRow: {
@@ -558,13 +581,13 @@ void HearthStyle::drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, QP
         if (vi && (vi->features & QStyleOptionViewItem::Alternate))
             p->fillRect(opt->rect, opt->palette.brush(QPalette::AlternateBase));
         if (opt->state & State_Selected)
-            p->fillRect(opt->rect, selectionFill(opt, c));
+            drawRowSelection(p, opt, w, selectionFill(opt, c));
         return;
     }
     case PE_IndicatorBranch: {
         if (!(opt->state & State_Children))
             return;
-        const QColor col = (opt->state & State_Selected) ? c.accentText : c.fg2;
+        const QColor col = (opt->state & State_Selected) && (opt->state & State_Active) ? c.accentText : c.fg2;
         chevron(p, QRectF(opt->rect).center(), 9, 4.5,
                 (opt->state & State_Open) ? Qt::DownArrow
                 : (opt->direction == Qt::RightToLeft ? Qt::LeftArrow : Qt::RightArrow), col, 1.5);
@@ -1439,7 +1462,8 @@ int HearthStyle::pixelMetric(PixelMetric pm, const QStyleOption *opt, const QWid
     case PM_SplitterWidth: return 5;
     case PM_HeaderMargin: return 6;
     case PM_DockWidgetTitleBarButtonMargin: return 4;
-    case PM_FocusFrameHMargin:
+    // (Item views pad their text by this + 1: clear of the rounded selection.)
+    case PM_FocusFrameHMargin: return 10;
     case PM_FocusFrameVMargin: return 2;
     default:
         break;
@@ -1519,6 +1543,13 @@ QSize HearthStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt, co
     case CT_ToolButton: {
         QSize s = QProxyStyle::sizeFromContents(ct, opt, size, w);
         return QSize(qMax(s.width(), 28), qMax(s.height(), 28));
+    }
+    case CT_ItemViewItem: {
+        // Rows with room around their text, as grove's lists.
+        QSize s = QProxyStyle::sizeFromContents(ct, opt, size, w);
+        if (!qobject_cast<const QTableView *>(w))
+            s.rheight() += 6;
+        return s;
     }
     case CT_HeaderSection: {
         QSize s = QProxyStyle::sizeFromContents(ct, opt, size, w);
