@@ -35,6 +35,22 @@ read that).
 Menus are drawn translucent on Wayland (the compositor blurs behind them);
 `HEARTH_STYLE_MENU_GLASS=0/1` overrides.
 
+## Flatpak apps
+
+    flatpak/build.sh            # every org.kde.Platform branch an installed app uses
+    flatpak/build.sh 6.11       # or just these
+
+builds `org.kde.KStyle.Hearth` (the extension point Adwaita and Kvantum
+use) for each KDE runtime branch with org.flatpak.Builder, installs it for
+the user and sets the overrides. Run it again when a KDE runtime updates.
+The widget style lands in the runtime's merged `styles/`; Qt 6 branches also
+carry `qml/` (org.hearth.desktop) and `kf6/` (its Kirigami plugin), which
+the script puts on each Qt 6 app's own paths. Apps pick the style up through
+the runtime's KDE platform theme (`QT_QPA_PLATFORMTHEME=kde`, a global
+override), which reads kdeglobals (`widgetStyle=Hearth`, hearth's palette)
+through the Settings portal; hearth-portal serves it.
+`test/flatpak-shot.sh out.png APP` screenshots a Flatpak app headless.
+
 ## Develop
 
     nix develop                 # Qt 6 (nix develop .#qt5 for Qt 5)
