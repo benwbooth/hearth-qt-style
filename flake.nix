@@ -23,6 +23,7 @@
         dontWrapQtApps = true;
         cmakeFlags = [
           "-DQT_MAJOR_VERSION=${toString major}"
+          "-DBUILD_GALLERY=OFF"
           "-DPLUGIN_INSTALL_DIR=${qtbase.qtPluginPrefix}/styles"
         ];
         meta = {

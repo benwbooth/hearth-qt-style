@@ -1173,6 +1173,57 @@ void HearthStyle::drawComplexControl(ComplexControl cc, const QStyleOptionComple
         }
         return;
     }
+    case CC_TitleBar: {
+        // MDI sub-window title bars: flat, the title centred, round
+        // window buttons in the macOS colours.
+        auto tb = qstyleoption_cast<const QStyleOptionTitleBar *>(opt);
+        if (!tb) break;
+        const bool active = tb->titleBarState & State_Active || (opt->state & State_Active);
+        p->fillRect(opt->rect, active ? c.track : c.window);
+        {
+            Saver sv(p);
+            p->setRenderHint(QPainter::Antialiasing, false);
+            p->fillRect(QRect(opt->rect.left(), opt->rect.bottom(), opt->rect.width(), 1), c.separator);
+        }
+        if (tb->subControls & SC_TitleBarLabel) {
+            const QRect lr = subControlRect(CC_TitleBar, tb, SC_TitleBarLabel, w);
+            QFont f = p->font();
+            f.setWeight(QFont::DemiBold);
+            p->save();
+            p->setFont(f);
+            p->setPen(active ? c.fg : c.fg2);
+            p->drawText(lr, Qt::AlignCenter | Qt::TextSingleLine,
+                        QFontMetrics(f).elidedText(tb->text, Qt::ElideRight, lr.width()));
+            p->restore();
+        }
+        const struct { SubControl sc; QColor color; } buttons[] = {
+            {SC_TitleBarCloseButton, QColor("#ff5f57")},
+            {SC_TitleBarMinButton, QColor("#febc2e")},
+            {SC_TitleBarMaxButton, QColor("#28c840")},
+            {SC_TitleBarNormalButton, QColor("#28c840")},
+            {SC_TitleBarShadeButton, c.fg2},
+            {SC_TitleBarUnshadeButton, c.fg2},
+            {SC_TitleBarContextHelpButton, c.fg2},
+        };
+        for (const auto &b : buttons) {
+            if (!(tb->subControls & b.sc))
+                continue;
+            const QRect br = subControlRect(CC_TitleBar, tb, b.sc, w);
+            if (!br.isValid())
+                continue;
+            const qreal d = qMin<qreal>(12, qMin(br.width(), br.height()));
+            QRectF dot(0, 0, d, d);
+            dot.moveCenter(QRectF(br).center());
+            QColor col = (active && enabled) ? b.color : c.selected;
+            if ((opt->activeSubControls & b.sc) && (opt->state & State_Sunken))
+                col = col.darker(120);
+            Saver sv(p);
+            p->setPen(Qt::NoPen);
+            p->setBrush(col);
+            p->drawEllipse(dot);
+        }
+        return;
+    }
     default:
         break;
     }

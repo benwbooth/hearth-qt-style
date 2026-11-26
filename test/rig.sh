@@ -5,8 +5,8 @@
 #
 #   test/rig.sh [--mode dark|light] [--plugins DIR] [--shot out.png] -- cmd args...
 #
-# --plugins: a directory holding styles/libhearth{5,6}.so (default: build6
-# and build5 here, else the installed system plugins). --shot: after the app
+# --plugins: an installed package prefix (e.g. ./result; default: build6 and
+# build5 here). --shot: after the app
 # has drawn, grab the whole screen with ImageMagick's `import` and stop it.
 set -euo pipefail
 here=$(cd "$(dirname "$0")/.." && pwd)
@@ -14,7 +14,7 @@ mode=dark plugins="" shot="" wait=4 size=1400x900
 while [[ $# -gt 0 ]]; do
     case $1 in
         --mode) mode=$2; shift 2 ;;
-        --plugins) plugins=$2; shift 2 ;;
+        --plugins) plugins=$(readlink -f "$2"); shift 2 ;;
         --shot) shot=$2; shift 2 ;;
         --wait) wait=$2; shift 2 ;;
         --size) size=$2; shift 2 ;;
@@ -36,7 +36,9 @@ unset WAYLAND_DISPLAY ARBOR_SOCKET NIRI_SOCKET QT_STYLE_OVERRIDE QT_QUICK_CONTRO
 
 # The plugins under test first on the plugin path.
 if [[ -n $plugins ]]; then
-    ln -s "$plugins"/styles/* "$rig/plugins6/styles/"
+    # A package prefix (nix build's result): both Qt versions' plugins.
+    ln -s "$plugins"/lib/qt-6/plugins/styles/* "$rig/plugins6/styles/"
+    ln -s "$plugins"/lib/qt-5*/plugins/styles/* "$rig/plugins5/styles/"
 else
     [[ -e $here/build6/libhearth6.so ]] && ln -s "$here/build6/libhearth6.so" "$rig/plugins6/styles/"
     [[ -e $here/build5/libhearth5.so ]] && ln -s "$here/build5/libhearth5.so" "$rig/plugins5/styles/"
