@@ -25,26 +25,33 @@ done
 
 rig=$(mktemp -d "${TMPDIR:-/tmp}/hearth-style-rig.XXXXXX")
 trap 'kill ${xvfb:-} 2>/dev/null || true; rm -rf "$rig"' EXIT
-mkdir -p "$rig"/{config,data,cache,state,runtime,plugins6/styles,plugins5/styles}
+mkdir -p "$rig"/{config,data,cache,state,runtime,plugins6/styles,plugins6/kf6/kirigami/platform,plugins5/styles}
 chmod 700 "$rig/runtime"
 export XDG_CONFIG_HOME=$rig/config XDG_DATA_HOME=$rig/data XDG_CACHE_HOME=$rig/cache
 export XDG_STATE_HOME=$rig/state XDG_RUNTIME_DIR=$rig/runtime
 export GSETTINGS_BACKEND=memory
 export DBUS_SESSION_BUS_ADDRESS=unix:path=$rig/runtime/no-bus
 export NO_AT_BRIDGE=1 QT_ACCESSIBILITY=0
-unset WAYLAND_DISPLAY ARBOR_SOCKET NIRI_SOCKET QT_STYLE_OVERRIDE QT_QUICK_CONTROLS_STYLE
+unset WAYLAND_DISPLAY ARBOR_SOCKET NIRI_SOCKET QT_STYLE_OVERRIDE
 
 # The plugins under test first on the plugin path.
 if [[ -n $plugins ]]; then
     # A package prefix (nix build's result): both Qt versions' plugins.
     ln -s "$plugins"/lib/qt-6/plugins/styles/* "$rig/plugins6/styles/"
     ln -s "$plugins"/lib/qt-5*/plugins/styles/* "$rig/plugins5/styles/"
+    ln -s "$plugins"/lib/qt-6/plugins/kf6/kirigami/platform/* "$rig/plugins6/kf6/kirigami/platform/" 2>/dev/null || true
+    qml=$plugins/lib/qt-6/qml
 else
+    qml=$here/qml
+    [[ -e $here/build6/org.hearth.desktop.so ]] && ln -s "$here/build6/org.hearth.desktop.so" "$rig/plugins6/kf6/kirigami/platform/"
     [[ -e $here/build6/libhearth6.so ]] && ln -s "$here/build6/libhearth6.so" "$rig/plugins6/styles/"
     [[ -e $here/build5/libhearth5.so ]] && ln -s "$here/build5/libhearth5.so" "$rig/plugins5/styles/"
 fi
 export QT_PLUGIN_PATH=$rig/plugins6:$rig/plugins5:${RIG_EXTRA_PLUGINS:+$RIG_EXTRA_PLUGINS:}/run/current-system/sw/lib/qt-6/plugins:/run/current-system/sw/lib/qt-5.15.19/plugins
 export QT_QPA_PLATFORMTHEME=qt5ct QT_QPA_PLATFORM=xcb
+# The org.hearth.desktop Qt Quick Controls style (as the session sets it).
+export QML_IMPORT_PATH=$qml${QML_IMPORT_PATH:+:$QML_IMPORT_PATH} QT_QUICK_CONTROLS_STYLE=${RIG_QQC_STYLE-org.hearth.desktop}
+[[ -z $QT_QUICK_CONTROLS_STYLE ]] && unset QT_QUICK_CONTROLS_STYLE
 export QT_SCALE_FACTOR=1.3333333 QT_AUTO_SCREEN_SCALE_FACTOR=0 QT_ENABLE_HIGHDPI_SCALING=0
 
 # hearth's palette, accent, fonts and style into the private config.

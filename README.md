@@ -12,6 +12,17 @@ come from the application palette (hearth writes its palette into
 qt5ct/qt6ct and kdeglobals). Kirigami / QtQuick Controls apps using the
 `org.kde.desktop` style (qqc2-desktop-style) draw through it too.
 
+## Qt Quick apps (Qt 6): `org.hearth.desktop`
+
+A Qt Quick Controls style made from the components of Ben's own apps
+(hearth's MacMenu / MacComboBox from `hearth/shared/app-menus`, copied into
+`qml/org/hearth/desktop/impl`, and grove's buttons, fields, switches, lists
+and scroll bars), with Qt's Basic style for anything it doesn't define.
+`QT_QUICK_CONTROLS_STYLE=org.hearth.desktop` selects it; Kirigami/KDE apps
+(Haruna...) honour that instead of `org.kde.desktop`, and
+`kf6/kirigami/platform/org.hearth.desktop.so` gives Kirigami the same
+colours (kdeglobals) and units as under `org.kde.desktop`.
+
 ## Use
 
     nix build .#default        # lib/qt-6/plugins/styles + lib/qt-5.x/plugins/styles
@@ -29,6 +40,7 @@ Menus are drawn translucent on Wayland (the compositor blurs behind them);
     nix develop                 # Qt 6 (nix develop .#qt5 for Qt 5)
     cmake -S . -B build6 -G Ninja -DQT_MAJOR_VERSION=6 && ninja -C build6
     test/rig.sh -- build6/hearth-style-gallery-qt6 --shot shot.png [--menu|--combo]
+    QML_IMPORT_PATH=<qtdeclarative>/lib/qt-6/qml test/rig.sh --shot shot.png -- qml test/gallery.qml -- [--menu|--combo]
 
 `test/rig.sh` runs an app headless (Xvfb, 4/3 scale, private XDG dirs, no
 session bus) with hearth's palette and the freshly built plugin.

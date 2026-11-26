@@ -13,18 +13,19 @@
         src = ./.;
         filter = path: type: !(builtins.elem (baseNameOf path) [ "build" "build5" "build6" "result" "shots" ]);
       };
-      styleFor = pkgs: qtbase: major: pkgs.stdenv.mkDerivation {
+      styleFor = pkgs: qtbase: major: extra: pkgs.stdenv.mkDerivation {
         pname = "hearth-qt-style-qt${toString major}";
         version = "0.1.0";
         inherit src;
         nativeBuildInputs = [ pkgs.cmake ];
-        buildInputs = [ qtbase ];
+        buildInputs = [ qtbase ] ++ extra;
         # A plugin, not an app: nothing to wrap.
         dontWrapQtApps = true;
         cmakeFlags = [
           "-DQT_MAJOR_VERSION=${toString major}"
           "-DBUILD_GALLERY=OFF"
           "-DPLUGIN_INSTALL_DIR=${qtbase.qtPluginPrefix}/styles"
+          "-DQML_INSTALL_DIR=${qtbase.qtQmlPrefix}"
         ];
         meta = {
           description = "Hearth widget style for Qt ${toString major}";
@@ -35,8 +36,10 @@
     in
     {
       packages = forAll (pkgs: rec {
-        qt6 = styleFor pkgs pkgs.qt6.qtbase 6;
-        qt5 = styleFor pkgs pkgs.libsForQt5.qtbase 5;
+        # (Qt 6 also: the org.hearth.desktop Qt Quick Controls style and its
+        # Kirigami platform plugin.)
+        qt6 = styleFor pkgs pkgs.qt6.qtbase 6 [ pkgs.qt6.qtdeclarative pkgs.kdePackages.kirigami.unwrapped ];
+        qt5 = styleFor pkgs pkgs.libsForQt5.qtbase 5 [ ];
         # Both, for a system profile: lib/qt-6/plugins/styles and
         # lib/qt-5.x/plugins/styles land on the session's QT_PLUGIN_PATH.
         default = pkgs.symlinkJoin {
@@ -47,7 +50,7 @@
 
       devShells = forAll (pkgs: {
         # (One Qt per shell: Qt's setup hooks refuse a mix.)
-        default = pkgs.mkShell { packages = [ pkgs.cmake pkgs.ninja pkgs.qt6.qtbase ]; };
+        default = pkgs.mkShell { packages = [ pkgs.cmake pkgs.ninja pkgs.qt6.qtbase pkgs.qt6.qtdeclarative pkgs.kdePackages.kirigami.unwrapped ]; };
         qt5 = pkgs.mkShell { packages = [ pkgs.cmake pkgs.ninja pkgs.libsForQt5.qtbase ]; };
       });
     };

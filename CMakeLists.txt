@@ -35,3 +35,25 @@ if(BUILD_GALLERY)
   set_target_properties(gallery PROPERTIES OUTPUT_NAME hearth-style-gallery-qt${QT_MAJOR_VERSION})
   install(TARGETS gallery RUNTIME DESTINATION bin)
 endif()
+
+# Qt 6 only: the org.hearth.desktop Qt Quick Controls style (QML, our own
+# components) and Kirigami's platform plugin for it.
+if(QT_MAJOR_VERSION EQUAL 6)
+  if(NOT QML_INSTALL_DIR)
+    get_target_property(_qmake6 Qt6::qmake IMPORTED_LOCATION)
+    execute_process(COMMAND ${_qmake6} -query QT_INSTALL_QML OUTPUT_VARIABLE QML_INSTALL_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
+  endif()
+  install(DIRECTORY qml/org DESTINATION ${QML_INSTALL_DIR})
+
+  option(BUILD_KIRIGAMI_PLUGIN "Build Kirigami's platform plugin for the org.hearth.desktop style" ON)
+  if(BUILD_KIRIGAMI_PLUGIN)
+    find_package(KF6KirigamiPlatform REQUIRED)
+    add_library(hearthkirigami MODULE kirigami/plugin.cpp kirigami/hearth-kirigami.json)
+    target_link_libraries(hearthkirigami PRIVATE Qt6::Core Qt6::Qml KF6::KirigamiPlatform)
+    find_package(Qt6 REQUIRED COMPONENTS Qml)
+    # Kirigami finds it by the style's name: kf6/kirigami/platform/org.hearth.desktop.so
+    set_target_properties(hearthkirigami PROPERTIES OUTPUT_NAME org.hearth.desktop PREFIX "")
+    get_filename_component(_plugins_root "${PLUGIN_INSTALL_DIR}" DIRECTORY)
+    install(TARGETS hearthkirigami LIBRARY DESTINATION ${_plugins_root}/kf6/kirigami/platform)
+  endif()
+endif()

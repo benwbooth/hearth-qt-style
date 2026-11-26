@@ -1,0 +1,35 @@
+module org.hearth.desktop
+# Anything not here: Qt Quick Controls' Basic style.
+import QtQuick.Controls.Basic auto
+singleton HearthTheme 1.0 HearthTheme.qml
+Button 2.0 Button.qml
+CheckBox 2.0 CheckBox.qml
+CheckDelegate 2.0 CheckDelegate.qml
+ComboBox 2.0 ComboBox.qml
+Frame 2.0 Frame.qml
+GroupBox 2.0 GroupBox.qml
+ItemDelegate 2.0 ItemDelegate.qml
+Menu 2.0 Menu.qml
+MenuBar 2.0 MenuBar.qml
+MenuBarItem 2.0 MenuBarItem.qml
+MenuItem 2.0 MenuItem.qml
+MenuSeparator 2.0 MenuSeparator.qml
+Popup 2.0 Popup.qml
+ProgressBar 2.0 ProgressBar.qml
+RadioButton 2.0 RadioButton.qml
+RadioDelegate 2.0 RadioDelegate.qml
+RoundButton 2.0 RoundButton.qml
+ScrollBar 2.0 ScrollBar.qml
+ScrollIndicator 2.0 ScrollIndicator.qml
+Slider 2.0 Slider.qml
+SpinBox 2.0 SpinBox.qml
+Switch 2.0 Switch.qml
+SwitchDelegate 2.0 SwitchDelegate.qml
+TabBar 2.0 TabBar.qml
+TabButton 2.0 TabButton.qml
+TextArea 2.0 TextArea.qml
+TextField 2.0 TextField.qml
+ToolBar 2.0 ToolBar.qml
+ToolButton 2.0 ToolButton.qml
+ToolSeparator 2.0 ToolSeparator.qml
+ToolTip 2.0 ToolTip.qml
