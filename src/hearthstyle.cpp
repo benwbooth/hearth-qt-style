@@ -1294,6 +1294,11 @@ QRect HearthStyle::subElementRect(SubElement se, const QStyleOption *opt, const 
         QRect label(r.right() - labelW + 1, r.top(), labelW, r.height());
         return visualRect(opt->direction, r, se == SE_ProgressBarLabel ? label : bar);
     }
+    case SE_ShapedFrameContents:
+        // A combo box's popup: the menu's padding above and below its rows.
+        if (isComboPopup(w))
+            return opt->rect.adjusted(0, MenuPadding, 0, -MenuPadding);
+        break;
     case SE_LineEditContents: {
         QRect r = QProxyStyle::subElementRect(se, opt, w);
         auto f = qstyleoption_cast<const QStyleOptionFrame *>(opt);
@@ -1427,17 +1432,25 @@ QSize HearthStyle::sizeFromContents(ContentsType ct, const QStyleOption *opt, co
             return QSize(size.width(), mi->text.isEmpty() ? MenuSeparator : MenuHeader);
         const bool gutter = mi->menuHasCheckableItems || mi->maxIconWidth > 0
                             || mi->checkType != QStyleOptionMenuItem::NotCheckable;
-        int width = (gutter ? MenuGutter : MenuTextInset) + size.width() + MenuTextInset;
+        // (A combo box's popup passes the whole view's size: measure the text.)
+        const bool combo = qobject_cast<const QComboBox *>(w);
+        int textWidth = size.width();
+        int height = size.height();
+        if (combo) {
+            textWidth = mi->fontMetrics.horizontalAdvance(mi->text);
+            height = qMax(mi->fontMetrics.height(), mi->icon.isNull() ? 0 : 16) + 8;
+        }
+        int width = (gutter ? MenuGutter : MenuTextInset) + textWidth + MenuTextInset;
         if (mi->text.contains(QLatin1Char('\t')))
             width += 16 + 5;    // the gap before the shortcut, and its looser spacing
         if (mi->menuItemType == QStyleOptionMenuItem::SubMenu)
             width += 20;
         // A combo box's popup: its rows are inset like a menu's.
-        if (qobject_cast<const QComboBox *>(w))
+        if (combo)
             width += 2 * MenuPadding;
         else
             width = qMax(width, MenuMinWidth - 2 * MenuPadding);
-        return QSize(width, qMax(MenuRow, size.height()));
+        return QSize(width, qMax(MenuRow, height));
     }
     case CT_MenuBarItem: {
         QSize s = QProxyStyle::sizeFromContents(ct, opt, size, w);

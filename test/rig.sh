@@ -41,7 +41,7 @@ else
     [[ -e $here/build6/libhearth6.so ]] && ln -s "$here/build6/libhearth6.so" "$rig/plugins6/styles/"
     [[ -e $here/build5/libhearth5.so ]] && ln -s "$here/build5/libhearth5.so" "$rig/plugins5/styles/"
 fi
-export QT_PLUGIN_PATH=$rig/plugins6:$rig/plugins5:/run/current-system/sw/lib/qt-6/plugins:/run/current-system/sw/lib/qt-5.15.19/plugins
+export QT_PLUGIN_PATH=$rig/plugins6:$rig/plugins5:${RIG_EXTRA_PLUGINS:+$RIG_EXTRA_PLUGINS:}/run/current-system/sw/lib/qt-6/plugins:/run/current-system/sw/lib/qt-5.15.19/plugins
 export QT_QPA_PLATFORMTHEME=qt5ct QT_QPA_PLATFORM=xcb
 export QT_SCALE_FACTOR=1.3333333 QT_AUTO_SCREEN_SCALE_FACTOR=0 QT_ENABLE_HIGHDPI_SCALING=0
 
