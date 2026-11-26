@@ -34,6 +34,10 @@ if(BUILD_GALLERY)
   target_link_libraries(gallery PRIVATE Qt${QT_MAJOR_VERSION}::Core Qt${QT_MAJOR_VERSION}::Gui Qt${QT_MAJOR_VERSION}::Widgets)
   set_target_properties(gallery PROPERTIES OUTPUT_NAME hearth-style-gallery-qt${QT_MAJOR_VERSION})
   install(TARGETS gallery RUNTIME DESTINATION bin)
+  # (Not installed: opens a QFileDialog; with test/portal-stub.py on a
+  # private bus it shows whether qt5ct/qt6ct send it to the portal.)
+  add_executable(filedialog-test EXCLUDE_FROM_ALL test/filedialog.cpp)
+  target_link_libraries(filedialog-test PRIVATE Qt${QT_MAJOR_VERSION}::Widgets)
 endif()
 
 # Qt 6 only: the org.hearth.desktop Qt Quick Controls style (QML, our own
